@@ -1,4 +1,6 @@
 import { useState, useRef } from "react";
+import config from './config';
+import Spinner from './Spinner';
 
 export default function App() {
   const [file, setFile] = useState(null);
@@ -14,7 +16,12 @@ export default function App() {
 
   // Handle file selection
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    if (selectedFile && selectedFile.size > 25 * 1024 * 1024) {
+      setError("File is too large. Please upload a file under 25MB.");
+      return;
+    }
+    setFile(selectedFile);
     setAudioBlob(null);
     setError("");
     setTranscript("");
@@ -73,7 +80,7 @@ export default function App() {
         formData.append("audio", file);
       }
 
-      const res = await fetch("http://localhost:8000/transcribe", {
+      const res = await fetch(`${config.backendUrl}/transcribe`, {
         method: "POST",
         body: formData,
       });
@@ -93,13 +100,21 @@ export default function App() {
   // Load transcription history
   const loadHistory = async () => {
     try {
-      const res = await fetch("http://localhost:8000/transcriptions");
+      const res = await fetch(`${config.backendUrl}/transcriptions`);
       const data = await res.json();
       setHistory(data);
       setHistoryLoaded(true);
     } catch (err) {
       setError("Could not load history.");
     }
+  };
+
+  // Clear everything
+  const handleClear = () => {
+    setFile(null);
+    setAudioBlob(null);
+    setTranscript("");
+    setError("");
   };
 
   return (
@@ -149,19 +164,21 @@ export default function App() {
               onClick={startRecording}
               className="w-full py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium transition border border-gray-700"
             >
-              🎤 Start Recording
+              <i className="fa-solid fa-microphone mr-2"></i>
+              Start Recording
             </button>
           ) : (
             <button
               onClick={stopRecording}
               className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition animate-pulse"
             >
-              ⏹ Stop Recording
+              Stop Recording
             </button>
           )}
           {audioBlob && !recording && (
-            <p className="text-white text-xs mt-2 text-center">
-              <i class="fa-solid fa-check"></i> Recording Ready
+            <p className="text-green-400 text-xs mt-2 text-center">
+              <i className="fa-solid fa-check mr-1"></i>
+              Recording ready!
             </p>
           )}
         </div>
@@ -175,6 +192,17 @@ export default function App() {
           {loading ? "Transcribing..." : "Transcribe"}
         </button>
 
+        {/* Clear Button */}
+        <button
+          onClick={handleClear}
+          className="w-full mt-3 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 text-sm font-medium transition border border-gray-700"
+        >
+          Clear
+        </button>
+
+        {/* Loading Spinner */}
+        {loading && <Spinner />}
+
         {/* Error */}
         {error && (
           <p className="mt-4 text-red-400 text-sm text-center">{error}</p>
@@ -183,7 +211,18 @@ export default function App() {
         {/* Transcript Result */}
         {transcript && (
           <div className="mt-6 bg-gray-800 rounded-xl p-5 border border-gray-700">
-            <p className="text-xs text-indigo-400 uppercase tracking-widest mb-2">Transcript</p>
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-xs text-indigo-400 uppercase tracking-widest">Transcript</p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(transcript);
+                  alert("Copied to clipboard!");
+                }}
+                className="text-xs text-gray-400 hover:text-white transition"
+              >
+                Copy
+              </button>
+            </div>
             <p className="text-gray-100 text-sm leading-relaxed">{transcript}</p>
           </div>
         )}
