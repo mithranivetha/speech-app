@@ -1,5 +1,5 @@
 const config = {
-  backendUrl: 'http://localhost:8000'
+  backendUrl: 'https://speech-backend-s5cw.onrender.com'
 };
 
 export default config;
