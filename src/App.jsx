@@ -86,10 +86,10 @@ export default function App() {
       });
 
       const data = await res.json();
-
       if (data.error) throw new Error(data.error);
 
       setTranscript(data.transcript);
+
     } catch (err) {
       setError("Something went wrong: " + err.message);
     } finally {
@@ -106,6 +106,19 @@ export default function App() {
       setHistoryLoaded(true);
     } catch (err) {
       setError("Could not load history.");
+    }
+  };
+
+  // Delete a transcription
+  const handleDelete = async (id) => {
+    try {
+      await fetch(`${config.backendUrl}/transcriptions/${id}`, {
+        method: "DELETE",
+      });
+      // Remove it from the list without reloading
+      setHistory(history.filter((item) => item.id !== id));
+    } catch (err) {
+      setError("Could not delete transcription.");
     }
   };
 
@@ -128,6 +141,11 @@ export default function App() {
         <p className="text-gray-400 mt-2 text-sm">
           Upload or record audio and get an instant transcription
         </p>
+        {historyLoaded && (
+          <p className="text-indigo-400 text-xs mt-1">
+            {history.length} transcription{history.length !== 1 ? "s" : ""} saved
+          </p>
+        )}
       </div>
 
       {/* Main Card */}
@@ -176,7 +194,7 @@ export default function App() {
             </button>
           )}
           {audioBlob && !recording && (
-            <p className="text-green-400 text-xs mt-2 text-center">
+            <p className="text-white text-xs mt-2 text-center">
               <i className="fa-solid fa-check mr-1"></i>
               Recording ready!
             </p>
@@ -224,12 +242,25 @@ export default function App() {
               </button>
             </div>
             <p className="text-gray-100 text-sm leading-relaxed">{transcript}</p>
+            <p className="text-gray-500 text-xs mt-3 text-right">
+              {transcript.length} characters
+            </p>
           </div>
         )}
       </div>
 
       {/* History Section */}
       <div className="w-full max-w-xl mt-8">
+        <div className="flex justify-between items-center mb-4">
+          <p className="text-xs text-gray-400 uppercase tracking-widest">Transcription History</p>
+          <button
+            onClick={loadHistory}
+            className="text-xs text-indigo-400 hover:text-indigo-300 transition"
+          >
+            Refresh
+          </button>
+        </div>
+
         <button
           onClick={loadHistory}
           className="w-full py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium transition border border-gray-700"
@@ -248,11 +279,22 @@ export default function App() {
           >
             <div className="flex justify-between items-center mb-2">
               <p className="text-xs text-indigo-400 font-medium">{item.filename}</p>
-              <p className="text-xs text-gray-500">
-                {new Date(item.created_at).toLocaleString()}
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-gray-500">
+                  {new Date(item.created_at).toLocaleString()}
+                </p>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="text-xs text-red-500 hover:text-red-400 transition"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed">{item.transcript}</p>
+            <p className="text-gray-600 text-xs mt-2 text-right">
+              {item.transcript.length} characters
+            </p>
           </div>
         ))}
       </div>
