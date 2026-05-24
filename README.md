@@ -3,7 +3,7 @@
 A full stack web app that converts audio to text using Deepgram's speech-to-text API.
 
 ## Live Demo
-https://your-netlify-url.netlify.app
+https://speech-to-text12.netlify.app/
 
 ## Tech Stack
 - React + Vite (Frontend)
